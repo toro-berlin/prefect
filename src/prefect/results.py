@@ -541,19 +541,19 @@ class ResultStore(BaseModel):
         if self.result_storage_block_id is None and (
             _resolve_path := getattr(self.result_storage, "_resolve_path", None)
         ):
-            # Check if the key has already been resolved by testing if it contains the prefix
+            # Check if the key has already been resolved by testing if it starts with the prefix
             # This prevents double resolution without metadata changes
             test_resolved = _resolve_path("")
-            if test_resolved and str(test_resolved) in key:
-                # Key already contains the prefix, don't resolve again
+            if test_resolved and key.startswith(str(test_resolved)):
                 return key
+
+            # Key doesn't contain prefix, resolve it
+            path_key = _resolve_path(key)
+            if path_key is not None:
+                return str(path_key)
             else:
-                # Key doesn't contain prefix, resolve it
-                path_key = _resolve_path(key)
-                if path_key is not None:
-                    return str(path_key)
-                else:
-                    return key
+                return key
+
         return key
 
     @sync_compatible
