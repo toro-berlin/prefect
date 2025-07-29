@@ -484,3 +484,39 @@ def test_task_resultlike_result_is_retained(persist_result, resultlike):
 
     result = my_flow().unquote()
     assert result == resultlike
+
+
+async def test_task_double_prefix_fix_with_storage_prefix(
+    prefect_client, tmp_path, events_pipeline
+):
+    """Test that the double prefix fix works with task execution using storage with prefix."""
+    from prefect.cache_policies import INPUTS, TASK_SOURCE
+
+    # Create storage with a prefix and save it
+    storage = LocalFileSystem(basepath=tmp_path / "test-prefix")
+    await storage.save("tmp-test-storage")
+
+    @flow(result_storage=storage)
+    def foo():
+        return bar(return_state=True)
+
+    @task(
+        persist_result=True,
+        cache_policy=INPUTS + TASK_SOURCE,
+    )
+    def bar():
+        return "task result"
+
+    # Execute the flow
+    flow_state = foo(return_state=True)
+    task_state = await flow_state.result()
+    assert await task_state.result() == "task result"
+
+    # Check that files were created with correct paths (no double prefix)
+    result_files = list(tmp_path.rglob("*"))
+    result_paths = [str(f.relative_to(tmp_path)) for f in result_files if f.is_file()]
+
+    # Verify no double prefix in any file path
+    for path in result_paths:
+        prefix_count = path.count("test-prefix")
+        assert prefix_count <= 1, f"Found double prefix in path: {path}"

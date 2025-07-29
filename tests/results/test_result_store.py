@@ -958,3 +958,45 @@ class TestResultStoreEmitsEvents:
         ) as mock_emit:
             await result_store.aread(key="test")
             mock_emit.assert_not_called()
+
+
+class TestDoublePrefixFix:
+    """Test cases for the double prefix resolution fix."""
+
+    async def test_resolved_key_path_detects_already_resolved_keys(self, tmp_path):
+        """Test that _resolved_key_path detects when a key is already resolved."""
+        filesystem = LocalFileSystem(basepath=tmp_path / "test-prefix")
+        result_store = ResultStore(result_storage=filesystem)
+
+        # Test with an unresolved key
+        original_key = "abc123"
+        resolved_once = result_store._resolved_key_path(original_key)
+        assert resolved_once != original_key
+        assert "test-prefix" in resolved_once
+
+        # Test with an already resolved key
+        resolved_twice = result_store._resolved_key_path(resolved_once)
+        assert resolved_twice == resolved_once  # Should not resolve again
+
+    async def test_double_prefix_fix_integration(self, tmp_path):
+        """Integration test to verify the double prefix fix works end-to-end."""
+        filesystem = LocalFileSystem(basepath=tmp_path / "test-prefix")
+        result_store = ResultStore(result_storage=filesystem)
+
+        # Write a result
+        await result_store.awrite(key="test-key", obj="test-data")
+
+        # Read the result
+        result_record = await result_store.aread(key="test-key")
+        assert result_record.result == "test-data"
+
+        # Check that the file was created with the correct path (no double prefix)
+        expected_path = tmp_path / "test-prefix" / "test-key"
+        assert expected_path.exists()
+
+        # Verify no double prefix in the file path
+        file_path = str(expected_path)
+        prefix_count = file_path.count("test-prefix")
+        assert prefix_count == 1, (
+            f"Expected 1 prefix, found {prefix_count} in {file_path}"
+        )
