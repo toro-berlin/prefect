@@ -683,6 +683,12 @@ class ResultStore(BaseModel):
             if TYPE_CHECKING:
                 assert isinstance(self.result_storage, WritableFileSystem)
 
+        if self.result_storage_block_id is None:
+            if _resolve_path := getattr(self.result_storage, "_resolve_path", None):
+                path_key = _resolve_path(key)
+                if path_key is not None:
+                    key = str(_resolve_path(key))
+
         return ResultRecord(
             result=obj,
             metadata=ResultRecordMetadata(
