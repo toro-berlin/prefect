@@ -544,7 +544,7 @@ class ResultStore(BaseModel):
             # Check if the key has already been resolved by testing if it contains the prefix
             # This prevents double resolution without metadata changes
             test_resolved = _resolve_path("")
-            if test_resolved and test_resolved in key:
+            if test_resolved and str(test_resolved) in key:
                 # Key already contains the prefix, don't resolve again
                 return key
             else:
