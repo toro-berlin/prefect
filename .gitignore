@@ -12,8 +12,8 @@ sdist/
 src/integrations/**/uv.lock
 
 # Build metadata
-src/prefect/_build_info.py
-src/prefect/_version.py
+#src/prefect/_build_info.py
+#src/prefect/_version.py
 
 # Test artifacts
 .benchmarks/
