@@ -621,10 +621,12 @@ class ResultStore(BaseModel):
             )
             await emit_result_read_event(self, resolved_key_path)
         else:
+            # Use resolved key for reading to match where the file was actually written
+            resolved_key = self._resolved_key_path(key)
             content = await call_explicitly_async_block_method(
                 self.result_storage,
                 "read_path",
-                (key,),
+                (resolved_key,),
                 {},
             )
             result_record: ResultRecord[Any] = ResultRecord.deserialize(
@@ -830,7 +832,7 @@ class ResultStore(BaseModel):
             await call_explicitly_async_block_method(
                 self.result_storage,
                 "write_path",
-                (result_record.metadata.storage_key,),
+                (resolved_key,),  # Use resolved key for result storage
                 {"content": result_record.serialize_result()},
             )
             await call_explicitly_async_block_method(
@@ -845,7 +847,7 @@ class ResultStore(BaseModel):
             await call_explicitly_async_block_method(
                 self.result_storage,
                 "write_path",
-                (result_record.metadata.storage_key,),
+                (resolved_key,),  # Use resolved key for result storage
                 {"content": result_record.serialize()},
             )
             await emit_result_write_event(self, result_record.metadata.storage_key)
@@ -1033,10 +1035,12 @@ class ResultStore(BaseModel):
             ),
         )
 
+        # Use resolved key for parameters storage to prevent double prefix
+        resolved_parameters_key = self._resolved_key_path(f"parameters/{identifier}")
         await call_explicitly_async_block_method(
             self.result_storage,
             "write_path",
-            (f"parameters/{identifier}",),
+            (resolved_parameters_key,),
             {"content": record.serialize()},
         )
 
@@ -1051,11 +1055,13 @@ class ResultStore(BaseModel):
             raise ValueError(
                 "Result store is not configured - must have a result storage block to read parameters"
             )
+        # Use resolved key for parameters reading to match where it was written
+        resolved_parameters_key = self._resolved_key_path(f"parameters/{identifier}")
         record: ResultRecord[Any] = ResultRecord[Any].deserialize(
             await call_explicitly_async_block_method(
                 self.result_storage,
                 "read_path",
-                (f"parameters/{identifier}",),
+                (resolved_parameters_key,),
                 {},
             )
         )
