@@ -683,11 +683,20 @@ class ResultStore(BaseModel):
             if TYPE_CHECKING:
                 assert isinstance(self.result_storage, WritableFileSystem)
 
-        if self.result_storage_block_id is None:
-            if _resolve_path := getattr(self.result_storage, "_resolve_path", None):
+        if self.result_storage_block_id is None and (
+            _resolve_path := getattr(self.result_storage, "_resolve_path", None)
+        ):
+            # Check if the key has already been resolved by testing if it starts with the prefix
+            # This prevents double resolution without metadata changes
+            test_resolved = _resolve_path("")
+            if test_resolved and key.startswith(str(test_resolved)):
+                # Key already contains the prefix, don't resolve again
+                pass
+            else:
+                # Key doesn't contain prefix, resolve it
                 path_key = _resolve_path(key)
                 if path_key is not None:
-                    key = str(_resolve_path(key))
+                    key = str(path_key)
 
         return ResultRecord(
             result=obj,
@@ -768,6 +777,7 @@ class ResultStore(BaseModel):
         from prefect._experimental.lineage import emit_result_write_event
 
         key = result_record.metadata.storage_key
+
         if result_record.metadata.storage_block_id is None:
             basepath = (
                 _resolve_path("")
