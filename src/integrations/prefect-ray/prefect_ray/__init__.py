@@ -1,6 +1,5 @@
-from . import _version
+# from . import _version
 
-__version__ = _version.__version__
-
+__version__ = "0.5.1"
 
 from .task_runners import RayTaskRunner  # noqa

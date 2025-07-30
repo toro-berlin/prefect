@@ -39,7 +39,7 @@ if TYPE_CHECKING:
         date: Optional[str]
 
 
-__version__ = _build_info.__version__
+__version__ = "3.4.11"
 __version_info__: "VersionInfo" = cast(
     "VersionInfo",
     {

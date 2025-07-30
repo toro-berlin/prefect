@@ -83,8 +83,8 @@ prefect.yaml
 libcairo.2.dylib
 
 # setuptools-scm generated files
-src/prefect/_version.py
-src/integrations/*/**/_version.py
+#src/prefect/_version.py
+#src/integrations/*/**/_version.py
 *.log
 
 # Pyright type analysis report
