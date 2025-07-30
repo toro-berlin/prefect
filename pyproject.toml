@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "prefect"
-dynamic = ["version"]
+version = "3.4.11"
 description = "Workflow orchestration and management."
 readme = "README.md"
 requires-python = ">=3.9,<3.14"
@@ -212,7 +212,7 @@ benchmark = ["pytest-benchmark>=5.1.0", "pytest-codspeed>=2.2.1"]
 source = "versioningit"
 
 [tool.versioningit]
-default-version = "0.0.0"
+default-version = "3.4.11"
 
 [tool.versioningit.vcs]
 match = ["[0-9]*.[0-9]*.[0-9]*", "[0-9]*.[0-9]*.[0-9]*.dev[0-9]*"]
