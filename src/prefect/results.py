@@ -538,22 +538,27 @@ class ResultStore(BaseModel):
         return await self._exists(key=key, _sync=False)
 
     def _resolved_key_path(self, key: str) -> str:
+        print(f"[DEBUG] _resolved_key_path called with key: '{key}'")
         if self.result_storage_block_id is None and (
             _resolve_path := getattr(self.result_storage, "_resolve_path", None)
         ):
             # Check if the key has already been resolved by testing if it starts with the prefix
             # This prevents double resolution without metadata changes
             test_resolved = _resolve_path("")
+            print(f"[DEBUG] test_resolved: '{test_resolved}'")
             if test_resolved and key.startswith(str(test_resolved)):
+                print(f"[DEBUG] Key already contains prefix, returning as-is: '{key}'")
                 return key
 
             # Key doesn't contain prefix, resolve it
             path_key = _resolve_path(key)
+            print(f"[DEBUG] Resolved path_key: '{path_key}'")
             if path_key is not None:
                 return str(path_key)
             else:
                 return key
 
+        print(f"[DEBUG] No resolution needed, returning: '{key}'")
         return key
 
     @sync_compatible
@@ -686,17 +691,29 @@ class ResultStore(BaseModel):
         if self.result_storage_block_id is None and (
             _resolve_path := getattr(self.result_storage, "_resolve_path", None)
         ):
+            print(f"[DEBUG] create_result_record: resolving key '{key}'")
             # Check if the key has already been resolved by testing if it starts with the prefix
             # This prevents double resolution without metadata changes
             test_resolved = _resolve_path("")
+            print(f"[DEBUG] create_result_record: test_resolved '{test_resolved}'")
             if test_resolved and key.startswith(str(test_resolved)):
+                print(
+                    f"[DEBUG] create_result_record: Key already contains prefix, keeping as-is: '{key}'"
+                )
                 # Key already contains the prefix, don't resolve again
                 pass
             else:
+                print(
+                    "[DEBUG] create_result_record: Key doesn't contain prefix, resolving..."
+                )
                 # Key doesn't contain prefix, resolve it
                 path_key = _resolve_path(key)
+                print(f"[DEBUG] create_result_record: resolved path_key '{path_key}'")
                 if path_key is not None:
                     key = str(path_key)
+                    print(f"[DEBUG] create_result_record: updated key to '{key}'")
+        else:
+            print(f"[DEBUG] create_result_record: No resolution needed for key '{key}'")
 
         return ResultRecord(
             result=obj,
