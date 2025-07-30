@@ -484,8 +484,10 @@ class ResultStore(BaseModel):
             # TODO: Add an `exists` method to commonly used storage blocks
             # so the entire payload doesn't need to be read
             try:
+                # Use resolved key for reading metadata to match the resolved key stored in metadata
+                resolved_key_for_metadata = self._resolved_key_path(key)
                 metadata_content = await call_explicitly_async_block_method(
-                    self.metadata_storage, "read_path", (key,), {}
+                    self.metadata_storage, "read_path", (resolved_key_for_metadata,), {}
                 )
                 if metadata_content is None:
                     return False
@@ -495,8 +497,9 @@ class ResultStore(BaseModel):
                 return False
         else:
             try:
+                resolved_key_path = self._resolved_key_path(key)
                 content = await call_explicitly_async_block_method(
-                    self.result_storage, "read_path", (key,), {}
+                    self.result_storage, "read_path", (resolved_key_path,), {}
                 )
                 if content is None:
                     return False
@@ -593,10 +596,12 @@ class ResultStore(BaseModel):
             self.result_storage = await aget_default_result_storage()
 
         if self.metadata_storage is not None:
+            # Use resolved key for reading metadata to match the resolved key stored in metadata
+            resolved_key_for_metadata = self._resolved_key_path(key)
             metadata_content = await call_explicitly_async_block_method(
                 self.metadata_storage,
                 "read_path",
-                (key,),
+                (resolved_key_for_metadata,),
                 {},
             )
             metadata = ResultRecordMetadata.load_bytes(metadata_content)
@@ -720,7 +725,7 @@ class ResultStore(BaseModel):
             metadata=ResultRecordMetadata(
                 serializer=self.serializer,
                 expiration=expiration,
-                storage_key=key,
+                storage_key=key,  # Store resolved key in metadata
                 storage_block_id=self.result_storage_block_id,
             ),
         )
@@ -794,6 +799,7 @@ class ResultStore(BaseModel):
         from prefect._experimental.lineage import emit_result_write_event
 
         key = result_record.metadata.storage_key
+        resolved_key = self._resolved_key_path(key)
 
         if result_record.metadata.storage_block_id is None:
             basepath = (
@@ -820,6 +826,7 @@ class ResultStore(BaseModel):
 
         # If metadata storage is configured, write result and metadata separately
         if self.metadata_storage is not None:
+            resolved_key_for_metadata = self._resolved_key_path(key)
             await call_explicitly_async_block_method(
                 self.result_storage,
                 "write_path",
@@ -829,7 +836,7 @@ class ResultStore(BaseModel):
             await call_explicitly_async_block_method(
                 self.metadata_storage,
                 "write_path",
-                (base_key,),
+                (resolved_key_for_metadata,),
                 {"content": result_record.serialize_metadata()},
             )
             await emit_result_write_event(self, result_record.metadata.storage_key)
