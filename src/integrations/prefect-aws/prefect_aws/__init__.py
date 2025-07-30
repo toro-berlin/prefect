@@ -16,4 +16,4 @@ __all__ = [
     "ECSWorker",
 ]
 
-__version__ = "0.4.1"
+__version__ = _version.__version__
